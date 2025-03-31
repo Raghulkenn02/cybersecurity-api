@@ -8,11 +8,13 @@ from urllib.parse import urlparse
 app = Flask(__name__)
 
 # Load the model and scaler
-model_path = r'C:\Users\rakes\.vscode\cybersecurity_project\cybersecurity_model\phishing_model.h5'
+model_path = "C:/Users/rakes/.vscode/cybersecurity_project/cybersecurity_model/cybersecurity_model/phishing_model.h5"
 scaler_path = r'C:\Users\rakes\.vscode\cybersecurity_project\cybersecurity_model\phishing_scaler.pkl'
 
+model_path = "phishing_model.h5"
 model = tf.keras.models.load_model(model_path)
 scaler = joblib.load(scaler_path)
+
 
 # Feature extraction function
 def extract_features(url):
