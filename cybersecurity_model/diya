@@ -1,0 +1,40 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import StandardScaler
+
+# Load the dataset
+# Replace the path with your actual dataset path
+df = pd.read_csv(r"C:\Users\rakes\Downloads\mitbih_test.csv\mitbih_test.csv", header=None)
+
+# Display the first few rows of the dataset
+print(df.head())
+
+# Assuming the first column is the signal data
+# If your dataset has multiple sensor readings, you can select the relevant columns
+data = df.iloc[:, 0].values.reshape(-1, 1)  # Reshape for a single feature
+
+# Preprocess the data: Standardize the data
+scaler = StandardScaler()
+data_scaled = scaler.fit_transform(data)
+
+# Apply Isolation Forest for anomaly detection
+model = IsolationForest(contamination=0.05, random_state=42)  # Adjust contamination as needed
+model.fit(data_scaled)
+
+# Predict anomalies
+df['anomaly'] = model.predict(data_scaled)
+
+# Anomalies are labeled as -1, normal points as 1
+anomalies = df[df['anomaly'] == -1]
+
+# Visualize the results
+plt.figure(figsize=(10, 6))
+plt.plot(df.index, df[0], label='Sensor Readings', color='blue')
+plt.scatter(anomalies.index, anomalies[0], color='red', label='Anomalies', marker='x')
+plt.title('Sensor Readings with Anomalies Detected')
+plt.xlabel('Index')
+plt.ylabel('Sensor Reading')
+plt.legend()
+plt.show()

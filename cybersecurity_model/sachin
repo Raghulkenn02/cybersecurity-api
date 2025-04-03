@@ -1,0 +1,155 @@
+import os
+import time
+import cv2
+import torch
+from pathlib import Path
+import numpy as np
+from yolov5.utils.datasets import LoadStreams, LoadImages
+from yolov5.utils.general import check_file, check_img_size, increment_path, select_device
+from yolov5.utils.torch_utils import time_sync
+from yolov5.models.experimental import attempt_load
+
+# Define constants and paths
+ROOT = Path("C:\\Users\\rakes\\Downloads\\sachins\\sachins\\datasets\\infrared\\images").resolve().parents[0] # Root directory of the project
+IMG_FORMATS = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']
+VID_FORMATS = ['.mp4', '.avi', '.mov', '.mkv']
+weights = ROOT / "C:\\Users\\rakes\\Downloads\\sachins\\sachins\\yolov5\\runs\\train\\iou_0.3\\weights"  # Path to the model weights # Path to the model weights
+project = ROOT / "C:\\Users\\rakes\\Downloads\\Sach"  # Directory for saving results  # Directory for saving results
+
+def choose_camera():
+    # Automatically selects the first available camera
+    for i in range(10):  # Try up to 10 camera indexes
+        cap = cv2.VideoCapture(i)
+        if cap.isOpened():
+            return i
+    raise Exception("No camera found")
+
+def run(
+    weights=weights,
+    source=ROOT / 'data/images',
+    imgsz=(640, 640),
+    conf_thres=0.25,
+    iou_thres=0.45,
+    device='',
+    view_img=False,
+    save_txt=False,
+    save_conf=False,
+    save_crop=False,
+    nosave=False,
+    classes=None,
+    agnostic_nms=False,
+    augment=False,
+    visualize=False,
+    update=False,
+    project=project,
+    name='exp',
+    exist_ok=False,
+    line_thickness=3,
+    hide_labels=False,
+    hide_conf=False,
+    half=False,
+    dnn=False
+):
+    # Ensure the source path or webcam ID is valid
+    source = str(source)
+    if source == '0':
+        source = str(choose_camera())  # Camera selection
+    if not os.path.exists(source) and not source.isnumeric():
+        print("Invalid source path or webcam ID.")
+        exit()
+
+    save_img = not nosave and not source.endswith('.txt')
+    is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
+    is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
+    webcam = source.isnumeric() or source.endswith('.txt') or (is_url and not is_file)
+
+    if is_url and is_file:
+        source = check_file(source)
+
+    # Directories for saving results
+    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)
+    (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)
+
+    # Load model
+    device = select_device(device)
+    model = attempt_load(weights, map_location=device)
+    stride, names, pt = model.stride, model.names, model.pt
+    imgsz = check_img_size(imgsz, s=stride)
+
+    # Dataloader
+    if webcam:
+        cap = cv2.VideoCapture(source)
+        if not cap.isOpened():
+            print(f"Error: Unable to open camera at index {source}")
+            exit()
+        view_img = True  # Automatically show images if using webcam
+        cudnn.benchmark = True
+        dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt)
+        bs = len(dataset)
+    else:
+        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
+        bs = 1  # batch_size
+
+    vid_path, vid_writer = [None] * bs, [None] * bs
+
+    # Warmup
+    model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))
+
+    # Main inference loop
+    dt, seen = [0.0, 0.0, 0.0], 0
+    for path, im, im0s, vid_cap, s in dataset:
+        if im.shape[0] == 0 or im.shape[1] == 0:
+            print(f"Skipping invalid image at {path}")
+            continue  # Skip if the image has no valid shape
+
+        # Perform inference
+        t1 = time_sync()
+        im = torch.from_numpy(im).to(device)
+        im = im.half() if model.fp16 else im.float()
+        im /= 255.0  # Normalize
+        if len(im.shape) == 3:
+            im = im[None]  # expand for batch dim
+        t2 = time_sync()
+
+        # Get predictions
+        pred = model(im, augment=augment, visualize=visualize)
+        t3 = time_sync()
+        dt[1] += t3 - t2
+
+        # Post-processing
+        # The code for post-processing predictions (e.g., NMS, drawing results, saving outputs)
+        # You can add your post-processing logic here
+
+        # Print inference time for each frame
+        print(f"Processed frame in {t3 - t1:.3f}s")
+
+    print("Inference completed.")
+
+if _name_ == "_main_":
+    opt = {
+        'weights': weights,
+        'source': '0',  # Default to webcam
+        'imgsz': (640, 640),
+        'conf_thres': 0.25,
+        'iou_thres': 0.45,
+        'device': '',
+        'view_img': False,
+        'save_txt': False,
+        'save_conf': False,
+        'save_crop': False,
+        'nosave': False,
+        'classes': None,
+        'agnostic_nms': False,
+        'augment': False,
+        'visualize': False,
+        'update': False,
+        'project': project,
+        'name': 'exp',
+        'exist_ok': False,
+        'line_thickness': 3,
+        'hide_labels': False,
+        'hide_conf': False,
+        'half': False,
+        'dnn': False
+    }
+    run(**opt)

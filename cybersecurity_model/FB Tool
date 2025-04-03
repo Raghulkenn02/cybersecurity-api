@@ -1,0 +1,86 @@
+import requests
+import json
+import re
+from bs4 import BeautifulSoup
+from colorama import Fore, Style
+
+# Define headers to mimic a real browser
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+}
+
+def check_facebook_username(username):
+    """Check if a Facebook username exists."""
+    url = f"https://www.facebook.com/profile.php?id=100088800420684"
+    response = requests.get(url, headers=HEADERS)
+    
+    if response.status_code == 200:
+        print(Fore.GREEN + f"[+] Username '{username}' exists on Facebook!" + Style.RESET_ALL)
+        return True
+    else:
+        print(Fore.RED + f"[-] Username '{username}' not found on Facebook." + Style.RESET_ALL)
+        return False
+
+def check_instagram_username(username):
+    """Check if an Instagram username exists."""
+    url = f"https://www.instagram.com/{username}/"
+    response = requests.get(url, headers=HEADERS)
+    
+    if response.status_code == 200:
+        print(Fore.GREEN + f"[+] Username '{username}' exists on Instagram!" + Style.RESET_ALL)
+        return True
+    else:
+        print(Fore.RED + f"[-] Username '{username}' not found on Instagram." + Style.RESET_ALL)
+        return False
+
+def check_facebook_email_or_phone(identifier):
+    """Check if an email or phone number is linked to a Facebook account via the password reset page."""
+    url = "https://www.facebook.com/login/identify/"
+    data = {"email": identifier}
+    
+    response = requests.post(url, data=data, headers=HEADERS)
+    
+    if "We couldn't find your account" in response.text:
+        print(Fore.RED + f"[-] No Facebook account found for {identifier}." + Style.RESET_ALL)
+        return False
+    else:
+        print(Fore.GREEN + f"[+] A Facebook account is associated with {identifier}!" + Style.RESET_ALL)
+        return True
+
+def check_instagram_email_or_phone(identifier):
+    """Check if an email or phone number is linked to an Instagram account via the password reset page."""
+    url = "https://www.instagram.com/accounts/account_recovery_send_ajax/"
+    data = {"email_or_username": identifier}
+    
+    response = requests.post(url, data=data, headers=HEADERS)
+    
+    if "We couldn't find an account" in response.text:
+        print(Fore.RED + f"[-] No Instagram account found for {identifier}." + Style.RESET_ALL)
+        return False
+    else:
+        print(Fore.GREEN + f"[+] An Instagram account is associated with {identifier}!" + Style.RESET_ALL)
+        return True
+
+def main():
+    print(Fore.YELLOW + "\n🔍 OSINT Username & Account Finder 🔍\n" + Style.RESET_ALL)
+    
+    identifier = input("Enter a username, email, or phone number: ").strip()
+    
+    results = {"identifier": identifier, "Facebook": {}, "Instagram": {}}
+    
+    # Check if the input is an email or phone
+    if "@" in identifier or re.match(r"^\+?[0-9]{10,15}$", identifier):
+        results["Facebook"]["Linked"] = check_facebook_email_or_phone(identifier)
+        results["Instagram"]["Linked"] = check_instagram_email_or_phone(identifier)
+    else:
+        results["Facebook"]["Exists"] = check_facebook_username(identifier)
+        results["Instagram"]["Exists"] = check_instagram_username(identifier)
+    
+    # Save results to a JSON file
+    with open("osint_results.json", "w") as f:
+        json.dump(results, f, indent=4)
+    
+    print(Fore.CYAN + "\nResults saved to osint_results.json" + Style.RESET_ALL)
+
+if __name__ == "__main__":
+    main()

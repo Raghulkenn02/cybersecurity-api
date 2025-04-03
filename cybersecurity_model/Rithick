@@ -1,0 +1,105 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+import joblib
+
+# Load the training and testing data
+train_data = pd.read_csv(r'C:\Users\rakes\Downloads\archive (11)\train.csv', low_memory=False)
+test_data = pd.read_csv(r'C:\Users\rakes\Downloads\archive (11)\test.csv', low_memory=False)
+
+# Display the first few rows of the training data
+print("Training Data:")
+print(train_data.head())
+
+# Display the first few rows of the testing data
+print("\nTesting Data:")
+print(test_data.head())
+
+# Preprocessing: Assuming the last column is the target variable
+X_train = train_data.iloc[:, :-1]  # Features
+y_train = train_data.iloc[:, -1]    # Target variable
+
+X_test = test_data.iloc[:, :-1]     # Features
+y_test = test_data.iloc[:, -1]       # Target variable
+
+# Handle missing values in features
+X_train.fillna(-999, inplace=True)
+X_test.fillna(-999, inplace=True)
+
+# Check for NaN values in the target variable
+print("\nChecking for NaN values in target variable:")
+print(y_train.isnull().sum())  # Should show the number of NaNs
+
+# Drop rows with NaN values in the target variable
+train_data_cleaned = train_data.dropna(subset=[train_data.columns[-1]])
+X_train_cleaned = train_data_cleaned.iloc[:, :-1]
+y_train_cleaned = train_data_cleaned.iloc[:, -1]
+
+# Handle categorical variables using One-Hot Encoding
+X_train_cleaned = pd.get_dummies(X_train_cleaned, drop_first=True)
+X_test = pd.get_dummies(X_test, drop_first=True)
+
+# Align the columns of the test set to match the training set
+X_test = X_test.reindex(columns=X_train_cleaned.columns, fill_value=0)
+
+# Split the cleaned training data into training and validation sets
+X_train_split, X_val_split, y_train_split, y_val_split = train_test_split(X_train_cleaned, y_train_cleaned, test_size=0.2, random_state=42)
+
+# Check for NaN values in the split data
+print("\nChecking for NaN values in training split:")
+print(X_train_split.isnull().sum().sum())  # Should be 0
+print(y_train_split.isnull().sum())  # Should be 0
+
+# Initialize the Random Forest Classifier
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+
+# Train the model
+model.fit(X_train_split, y_train_split)
+
+# Validate the model
+y_val_pred = model.predict(X_val_split)
+
+# Print the classification report and confusion matrix for validation
+print("\nValidation Classification Report:")
+print(classification_report(y_val_split, y_val_pred))
+
+print("\nValidation Confusion Matrix:")
+conf_matrix = confusion_matrix(y_val_split, y_val_pred)
+print(conf_matrix)
+
+# Visualize the confusion matrix for validation
+plt.figure(figsize=(10, 7))
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=np.unique(y_val_split), yticklabels=np.unique(y_val_split))
+plt.title('Validation Confusion Matrix')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.show()
+
+# Test the model on the test dataset
+y_test_pred = model.predict(X_test)
+
+# Print the classification report and confusion matrix for the test dataset
+print("\nTest Classification Report:")
+print(classification_report(y_test, y_test_pred))
+
+print("\nTest Confusion Matrix:")
+test_conf_matrix = confusion_matrix(y_test, y_test_pred)
+print(test_conf_matrix)
+
+# Visualize the confusion matrix for the test dataset
+plt.figure(figsize=(10, 7))
+sns.heatmap(test_conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=np.unique(y_test), yticklabels=np.unique(y_test))
+plt.title('Test Confusion Matrix')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.show()
+
+# Save the model to a file (optional)
+joblib.dump(model, 'random_forest_model.pkl')
+
+# Load the model from the file (when needed)
+# loaded_model = joblib.load('random ⬤

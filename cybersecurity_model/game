@@ -1,0 +1,84 @@
+import pygame
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# Screen dimensions and settings
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Crime Scene Management Game")
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+
+# Load assets
+background_img = pygame.image.load("crime_scene.png")  # Add a background image of a crime scene
+background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
+
+# Evidence data
+evidences = [
+    {"name": "Fingerprint", "method": "Dusting powder", "position": (150, 200), "collected": False},
+    {"name": "Blood sample", "method": "Cotton swab", "position": (300, 400), "collected": False},
+    {"name": "Hair strand", "method": "Tweezers", "position": (500, 150), "collected": False},
+    {"name": "Footprint", "method": "Casting material", "position": (600, 450), "collected": False}
+]
+
+# Font
+font = pygame.font.Font(None, 36)
+
+# Functions
+def display_text(text, color, x, y):
+    render = font.render(text, True, color)
+    screen.blit(render, (x, y))
+
+def check_collision(evidence, pos):
+    x, y = evidence["position"]
+    return x - 20 < pos[0] < x + 20 and y - 20 < pos[1] < y + 20
+
+# Main game loop
+def main():
+    running = True
+    collected_count = 0
+    while running:
+        screen.fill(WHITE)
+        screen.blit(background_img, (0, 0))
+
+        # Event handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                for evidence in evidences:
+                    if not evidence["collected"] and check_collision(evidence, mouse_pos):
+                        print(f"You found a {evidence['name']}! Use the {evidence['method']} to collect it.")
+                        evidence["collected"] = True
+                        collected_count += 1
+
+        # Draw evidence markers
+        for evidence in evidences:
+            if not evidence["collected"]:
+                pygame.draw.circle(screen, RED, evidence["position"], 10)
+        
+        # Display collected count
+        display_text(f"Evidences Collected: {collected_count}/{len(evidences)}", BLACK, 10, 10)
+
+        # Game completion
+        if collected_count == len(evidences):
+            display_text("🎉 All evidence collected! Well done! 🎉", GREEN, 200, 500)
+
+        # Update the screen
+        pygame.display.flip()
+        pygame.time.Clock().tick(30)
+
+    pygame.quit()
+    sys.exit()
+
+if __name__ == "__main__":
+    main()
+7785854400:AAG94gjxt19kNo3rG_mVobQEY5l1fO--Ses
+EAAVuW66gWaEBO8ZBWSQ5ZCZBjgEfX7HZAtjx4VmElEo9D3HQM0thneBhHgPTfcKmAALDvhyGzBfAYaZAYYU1bbA676dZC5HF7QqBmSZAXBTTODLxELjNVZBwqb3KML0yZCWhKT4pqr7jXZADSROQwJ0VElJa5hwO9wn2m4ALzZCOqybzorbkebBInfXHoSGTGZAr9Jq8pKuau6K6ZCZBNKALSwMdacZC8XTH93CzjhYCyE8EYyb6VpniZAMYT83FZApP5Q9hkdZCKpZBdWzOAZDZD

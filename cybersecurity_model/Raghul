@@ -1,0 +1,46 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.utils import to_categorical
+
+# Load and preprocess the dataset
+data = pd.read_csv(r"C:\Users\rakes\OneDrive\Desktop\Raghul\Clg\Dissertation\Datasets\Preprocessed data\preprocessed_phishing_data.csv")  # Replace with your dataset
+X = data.drop('label', axis=1).values
+y = to_categorical(data['label'].values)
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Build the neural network model
+model = Sequential()
+model.add(Dense(128, activation='relu', input_shape=(X_train.shape[1],)))
+model.add(Dense(64, activation='relu'))
+model.add(Dense(y.shape[1], activation='softmax'))
+
+# Compile the model
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+# Train the model
+model.fit(X_train, y_train, epochs=20, batch_size=32, validation_data=(X_test, y_test))
+
+# Save the model as model.h5
+model.save('model.keras')
+
+# Make predictions
+predictions = model.predict(X_test)
+predicted_classes = np.argmax(predictions, axis=1)
+actual_classes = np.argmax(y_test, axis=1)
+
+# Visualize actual vs predicted data
+plt.figure(figsize=(10, 6))
+plt.plot(actual_classes, label='Actual', color='blue', marker='o')
+plt.plot(predicted_classes, label='Predicted', color='red', marker='x')
+plt.title('Actual vs Predicted Classes')
+plt.xlabel('Sample Index')
+plt.ylabel('Class')
+plt.legend()
+plt.grid()
+plt.show()

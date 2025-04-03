@@ -1,0 +1,53 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, confusion_matrix
+
+# Load your dataset with the correct delimiter
+file_path = r"C:\Users\rakes\Downloads\CTU-IoT-Malware-Capture-1-1conn.log.labeled.csv"
+data = pd.read_csv(file_path, delimiter='|')
+
+# Print the columns to check their names
+print("Columns in the DataFrame:", data.columns)
+
+# Print the first few rows of the DataFrame
+print("First few rows of the DataFrame:")
+print(data.head())
+
+# Attempt to drop the 'label' column (assuming this is your target variable)
+try:
+    X = data.drop(columns=['label'])  # Change 'label' to the actual target column name if different
+    y = data['label']  # Change 'label' to the actual target column name if different
+    print("Successfully separated features and target variable.")
+except KeyError as e:
+    print(f"Error: {e}. The column 'label' was not found in the DataFrame.")
+    exit()
+
+# Identify non-numeric columns
+non_numeric_cols = X.select_dtypes(include=['object']).columns
+print("Non-numeric columns:", non_numeric_cols)
+
+# Drop non-numeric columns
+X = X.drop(columns=non_numeric_cols)
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardize the features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Create and train the model
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))

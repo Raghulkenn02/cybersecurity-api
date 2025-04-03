@@ -1,0 +1,82 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+
+# ✅ Check TensorFlow version and Keras availability
+print("TensorFlow Version:", tf.__version__)
+print("Keras Available:", hasattr(tf, 'keras'))
+
+# ✅ Load dataset
+dataset_path = r"C:\Users\rakes\OneDrive\Desktop\Raghul\Personal\Sana\Dissertation\Dataset\archive\Preprocessed Dataset\dataset_link_phishing_cleaned.csv"
+data = pd.read_csv(dataset_path)
+
+print("Dataset loaded successfully!")
+
+# ✅ Convert non-numeric columns to numerical using Label Encoding
+data = data.astype(str)  # Ensure all values are strings before encoding
+non_numeric_columns = data.select_dtypes(exclude=['number']).columns  # Identify categorical columns
+
+label_encoders = {}  # Store encoders for potential decoding later
+for col in non_numeric_columns:
+    label_encoders[col] = LabelEncoder()
+    data[col] = label_encoders[col].fit_transform(data[col])  # Convert to numbers
+
+# ✅ Extract features and labels
+X = data.iloc[:, :-1].values  # Features (converted to numerical)
+y = data.iloc[:, -1].values   # Labels
+
+# ✅ Split dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# ✅ Standardize numerical features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# ✅ Define the model using tf.keras
+def create_model():
+    model = tf.keras.Sequential([
+        tf.keras.layers.Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
+        tf.keras.layers.Dense(32, activation='relu'),
+        tf.keras.layers.Dense(1, activation='sigmoid')  # Binary classification
+    ])
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
+# ✅ Create and train the model
+model = create_model()
+history = model.fit(X_train, y_train, epochs=10, validation_split=0.2, verbose=1)
+
+# ✅ Save the model
+model.save('phishing_model.h5')
+
+# ✅ Evaluate the model
+test_loss, test_accuracy = model.evaluate(X_test, y_test)
+print(f'Test Accuracy: {test_accuracy:.4f}')
+
+# ✅ Plot training history
+plt.figure(figsize=(12, 4))
+
+# Accuracy plot
+plt.subplot(1, 2, 1)
+plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Model Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+
+# Loss plot
+plt.subplot(1, 2, 2)
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Model Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+
+plt.tight_layout()
+plt.show()

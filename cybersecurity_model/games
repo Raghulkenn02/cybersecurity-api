@@ -1,0 +1,155 @@
+import pygame
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# Screen dimensions
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Crime Scene Management Game")
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+
+# Load assets
+background_img = pygame.image.load("crime_scene.png")  # Replace with your crime scene image
+background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
+
+# Load evidence images
+fingerprint_img = pygame.image.load("fingerprint.webp")
+blood_sample_img = pygame.image.load("blood_sample.jpg")
+hair_strand_img = pygame.image.load("hair_strand.jpg")
+footprint_img = pygame.image.load("footprint.jpg")
+
+# Resize evidence images for better visibility
+fingerprint_img = pygame.transform.scale(fingerprint_img, (50, 50))
+blood_sample_img = pygame.transform.scale(blood_sample_img, (50, 50))
+hair_strand_img = pygame.transform.scale(hair_strand_img, (50, 50))
+footprint_img = pygame.transform.scale(footprint_img, (50, 50))
+
+# Evidence data
+evidences = [
+    {
+        "name": "Fingerprint",
+        "method": "Dusting powder",
+        "options": ["Dusting powder", "Cotton swab", "Tweezers", "Casting material"],
+        "position": (150, 200),
+        "image": fingerprint_img,
+        "collected": False,
+    },
+    {
+        "name": "Blood sample",
+        "method": "Cotton swab",
+        "options": ["Dusting powder", "Cotton swab", "Tweezers", "Casting material"],
+        "position": (300, 400),
+        "image": blood_sample_img,
+        "collected": False,
+    },
+    {
+        "name": "Hair strand",
+        "method": "Tweezers",
+        "options": ["Dusting powder", "Cotton swab", "Tweezers", "Casting material"],
+        "position": (500, 150),
+        "image": hair_strand_img,
+        "collected": False,
+    },
+    {
+        "name": "Footprint",
+        "method": "Casting material",
+        "options": ["Dusting powder", "Cotton swab", "Tweezers", "Casting material"],
+        "position": (600, 450),
+        "image": footprint_img,
+        "collected": False,
+    },
+]
+
+# Font
+font = pygame.font.Font(None, 36)
+
+# Helper functions
+def display_text(text, color, x, y):
+    """Displays text on the screen."""
+    render = font.render(text, True, color)
+    screen.blit(render, (x, y))
+
+def check_collision(evidence, pos):
+    """Checks if the mouse click is on the evidence."""
+    x, y = evidence["position"]
+    return x - 25 < pos[0] < x + 25 and y - 25 < pos[1] < y + 25
+
+def ask_collection_method(evidence):
+    """Presents a multiple-choice question for the method to collect evidence."""
+    running = True
+    while running:
+        screen.fill(WHITE)
+        screen.blit(background_img, (0, 0))
+        display_text(f"How will you collect the {evidence['name']}?", BLACK, 100, 50)
+        
+        # Display options
+        for i, option in enumerate(evidence["options"]):
+            display_text(f"{i + 1}. {option}", BLUE, 100, 100 + i * 40)
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4]:
+                    choice = int(event.key - pygame.K_1)
+                    if evidence["options"][choice] == evidence["method"]:
+                        return True  # Correct method
+                    else:
+                        return False  # Wrong method
+
+# Main game loop
+def main():
+    running = True
+    collected_count = 0
+    
+    while running:
+        screen.fill(WHITE)
+        screen.blit(background_img, (0, 0))
+        
+        # Draw evidence markers
+        for evidence in evidences:
+            if not evidence["collected"]:
+                x, y = evidence["position"]
+                screen.blit(evidence["image"], (x - 25, y - 25))
+        
+        # Display collected count
+        display_text(f"Evidences Collected: {collected_count}/{len(evidences)}", BLACK, 10, 10)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                for evidence in evidences:
+                    if not evidence["collected"] and check_collision(evidence, mouse_pos):
+                        correct = ask_collection_method(evidence)
+                        if correct:
+                            print(f"✅ Correct! You collected the {evidence['name']} using {evidence['method']}.")
+                            evidence["collected"] = True
+                            collected_count += 1
+                        else:
+                            print(f"❌ Incorrect! You failed to collect the {evidence['name']} properly.")
+        
+        # Game completion
+        if collected_count == len(evidences):
+            display_text("🎉 All evidence collected! Well done! 🎉", GREEN, 200, 500)
+        
+        pygame.display.flip()
+        pygame.time.Clock().tick(30)
+    
+    pygame.quit()
+    sys.exit()
+
+if __name__ == "__main__":
+    main()

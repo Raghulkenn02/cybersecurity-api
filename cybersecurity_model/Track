@@ -1,0 +1,46 @@
+import phonenumbers
+from phonenumbers import timezone, geocoder, carrier
+import folium
+from geopy.geocoders import Nominatim
+
+# Function to track phone number
+def track_phone_number():
+    # Enter phone number with country code
+    number = input("+916381419461")
+
+    # Parsing the phone number
+    phoneNumber = phonenumbers.parse(number)
+
+    # Getting timezone
+    timeZone = timezone.time_zones_for_number(phoneNumber)
+    print("Timezone: " + str(timeZone))
+
+    # Getting geolocation
+    geolocation = geocoder.description_for_number(phoneNumber, "en")
+    print("Location: " + geolocation)
+
+    # Getting service provider
+    service = carrier.name_for_number(phoneNumber, "en")
+    print("Service Provider: " + service)
+
+    # Using Nominatim to get latitude and longitude
+    geolocator = Nominatim(user_agent="phone_tracker")
+    location = geolocator.geocode(geolocation)
+
+    if location:
+        lat = location.latitude
+        lng = location.longitude
+        print(f"Latitude: {lat}, Longitude: {lng}")
+
+        # Create a map
+        myMap = folium.Map(location=[lat, lng], zoom_start=9)
+        folium.Marker([lat, lng], popup=geolocation).add_to(myMap)
+
+        # Save map to HTML file
+        myMap.save("Location.html")
+        print("Map has been saved as 'Location.html'.")
+    else:
+        print("Location not found.")
+
+# Run the function
+track_phone_number()
